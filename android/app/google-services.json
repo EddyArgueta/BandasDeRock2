@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "560334240807",
+    "project_id": "bandasrock-af484",
+    "storage_bucket": "bandasrock-af484.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:560334240807:android:ee2989ed8210b0f8c66202",
+        "android_client_info": {
+          "package_name": "com.example.bandasrockeras"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtNcJjCoLNhxC8BNYZyO-tcUmEXYLQGZA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
