@@ -16,40 +16,62 @@ class _PantallaCreaBandasState extends State<PantallaCreaBandas> {
   TextEditingController nombreController = TextEditingController();
   TextEditingController albumController = TextEditingController();
   TextEditingController yearController = TextEditingController();
+  final _picker = ImagePicker();
+  File? _imageFile;
+  String? _imageUrl;
 
-   Future<String?> subirFoto(String path) async {
-  try {
-    final storageRef = FirebaseStorage.instance.ref();
-    final imagen = File(path);
-    final referenciaFotoPerfil = storageRef.child("ImagenesDeBandas/mi_foto.jpg");
-    final uploadTask = await referenciaFotoPerfil.putFile(imagen);
-    final url = await uploadTask.ref.getDownloadURL();
-    return url;
-  } catch (e) {
-    print("Error al subir la foto: $e");
-    return null; 
-  }
-}
+  Future<void> _guardarBanda(BuildContext context) async {
+    final storage = FirebaseStorage.instance;
+    String nombre = nombreController.text;
+    String album = albumController.text;
+    String year = yearController.text;
 
+    if (_imageFile != null) {
+      // Crear una referencia de almacenamiento dinámica
+      final imageRef = storage.ref().child('Imagen_Banda/$nombre-${DateTime.now()}.png');
+      await imageRef.putFile(_imageFile!);
+      final imageUrl = await imageRef.getDownloadURL();
 
-      void _guardarBanda(BuildContext context) async {
-      String nombre = nombreController.text;
-      String album = albumController.text;
-      String year = yearController.text;
+      setState(() {
+        _imageUrl = imageUrl;
+      });
 
-      FirebaseFirestore.instance.collection('colecciones').add({
+      await FirebaseFirestore.instance.collection('coleccionImagen').add({
         'NombreBanda': nombre,
         'NombreAlbum': album,
         'AñoLanzamiento': year,
         'CantidadVotos': 0,
-      }).then((value) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const PantallaListadoBandas()),
-        );
-      }).catchError((error) => print("Error al añadir banda: $error"));
-    }
+        'imageUrl': imageUrl,
+      });
 
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const PantallaListadoBandas()),
+      );
+    } else {
+      await FirebaseFirestore.instance.collection('coleccionImagen').add({
+        'NombreBanda': nombre,
+        'NombreAlbum': album,
+        'AñoLanzamiento': year,
+        'CantidadVotos': 0,
+        'imageUrl': null, // Puedes asignar null si no se ha seleccionado una imagen
+      });
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const PantallaListadoBandas()),
+      );
+    }
+  }
+
+  Future<void> _imagenGaleria() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +102,7 @@ class _PantallaCreaBandasState extends State<PantallaCreaBandas> {
                 maxLength: 30,
                 keyboardType: TextInputType.name,
                 decoration: const InputDecoration(
-                  labelText: 'Nombre del Album',
+                  labelText: 'Nombre del Álbum',
                   prefixIcon: Icon(Icons.queue_music),
                   border: OutlineInputBorder(),
                 ),
@@ -92,33 +114,34 @@ class _PantallaCreaBandasState extends State<PantallaCreaBandas> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Año de Lanzamiento',
-                  prefixIcon: Icon(Icons.calendar_month_rounded),
+                  prefixIcon: Icon(Icons.calendar_today_rounded),
                   border: OutlineInputBorder(),
                 ),
               ),
 
-              const SizedBox(height: 16.0),
-              ElevatedButton(
-                  onPressed: () async {
-                    final ImagePicker picker = ImagePicker();
-
-                    final XFile? image =
-                        await picker.pickImage(source: ImageSource.gallery);
-
-                    if (image == null) return;
-
-                    final url = await subirFoto(image.path);
-
-                    print(url);
-                    // image.path
-                  },
-                  child: const Text('Subir foto de Banda')),
+              const SizedBox(height: 20),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _imagenGaleria,
+                  child: const Text('Seleccionar Imagen desde Galería'),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () => _guardarBanda(context),
+                  child: const Text('Agregar Banda'),
+                ),
+              ),
 
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => _guardarBanda(context),
-                child: const Text('Guardar Banda'),
-              ),
+              if (_imageUrl != null)
+                Center(
+                  child: CircleAvatar(
+                    backgroundImage: NetworkImage(_imageUrl!),
+                    radius: 60,
+                  ),
+                ),
             ],
           ),
         ),

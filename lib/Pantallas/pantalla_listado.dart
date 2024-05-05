@@ -1,4 +1,3 @@
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -17,8 +16,8 @@ class PantallaListadoBandas extends StatelessWidget {
 
   Widget _buildListadoBandas(BuildContext context) {
     return StreamBuilder(
-      stream: FirebaseFirestore.instance.collection('colecciones').snapshots(),
-      builder: (BuildContext context, AsyncSnapshot <QuerySnapshot> snapshot) {
+      stream: FirebaseFirestore.instance.collection('coleccionImagen').snapshots(),
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -58,14 +57,26 @@ class PantallaListadoBandas extends StatelessWidget {
               ),
               child: ListTile(
                 title: Text(banda['NombreBanda']),
-                subtitle: Text(
-                  'Álbum: ${banda['NombreAlbum']} - Año: ${banda['AñoLanzamiento']}',
-                ),
-                trailing: ElevatedButton(
+                subtitle: Text('Álbum: ${banda['NombreAlbum']} - Año: ${banda['AñoLanzamiento']} - Votos: ${banda['CantidadVotos']}'),
+                leading: banda['imageUrl'] != null
+                    ? CircleAvatar(
+                        backgroundImage: NetworkImage(banda['imageUrl']),
+                      )
+                    : const CircleAvatar(
+                        backgroundColor: Colors.grey,
+                        child: Icon(
+                          Icons.music_note,
+                          color: Colors.white,
+                        ),
+                      ),
+                onTap: () {
+                  _votarBanda(banda.id);
+                },
+                trailing: IconButton(
+                  icon: const Icon(Icons.thumb_up),
                   onPressed: () {
                     _votarBanda(banda.id);
                   },
-                  child: Text('Votar (${banda['CantidadVotos']})'),
                 ),
               ),
             );
@@ -76,15 +87,16 @@ class PantallaListadoBandas extends StatelessWidget {
   }
 
   void _votarBanda(String id) async {
-    CollectionReference bandas = FirebaseFirestore.instance.collection('colecciones');
+    CollectionReference bandas = FirebaseFirestore.instance.collection('coleccionImagen');
     DocumentSnapshot banda = await bandas.doc(id).get();
     int votosActuales = banda['CantidadVotos'];
     await bandas.doc(id).update({'CantidadVotos': votosActuales + 1});
   }
 
   void _eliminarBanda(String id) async {
-    CollectionReference bandas = FirebaseFirestore.instance.collection('colecciones');
+    CollectionReference bandas = FirebaseFirestore.instance.collection('coleccionImagen');
     await bandas.doc(id).delete();
   }
 }
+
 
